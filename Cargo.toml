@@ -1,5 +1,5 @@
 [package]
-name = "RezilionProject"
+name = "rezilion_project"
 version = "0.1.0"
 authors = ["tomdrc1 <tomdrc4@gmail.com>"]
 edition = "2018"
