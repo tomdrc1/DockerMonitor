@@ -12,10 +12,20 @@ impl DBHelper
         DBHelper{connection: sqlite::open(file_name).unwrap()}
     }
 
-    /// Makes the wanted tables (images, files)
+    /// Makes the wanted table (files)
     pub fn create_tables(&self)
     {
-        self.connection.execute("CREATE TABLE IF NOT EXISTS images (name TEXT PRIMARY KEY NOT NULL, digest TEXT NOT NULL, hashed INTEGER NOT NULL)").unwrap();
         self.connection.execute("CREATE TABLE IF NOT EXISTS files (path TEXT NOT NULL, digest TEXT NOT NULL, hash TEXT NOT NULL)").unwrap();
+    }
+
+    /// Will insert a file entry to the db
+    /// 
+    /// # Arguments
+    /// * `path` - The path to the file in the image
+    /// * `digest` - The image digest, each image has a unique digest.format
+    /// * `hash` - The hash of the file in the path. (md5)
+    pub fn insert_file(&self, path: &String, digest: &String, hash: &String)
+    {
+        self.connection.execute(format!("INSERT INTO files (path, digest, hash) VALUES('{}', '{}', '{}')", path, digest, hash)).unwrap();
     }
 }
