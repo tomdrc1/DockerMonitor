@@ -1,1 +1,4 @@
 /target
+runthis.sh
+db.sqlite
+out/
