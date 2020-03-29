@@ -27,7 +27,7 @@ pub struct DockerHelper
 
 impl DockerHelper
 {
-    /// Will make a new docker helper. Running this will also generate a new DBHelper that will make a new db.println!
+    /// Will make a new docker helper. Running this will also generate a new DBHelper that will make a new db
     /// 
     /// # Arguments
     /// * `db_file_name` - The name of the db file.
@@ -76,7 +76,8 @@ impl DockerHelper
         {
             return;
         }
-        
+        println!("Found new container, reading image {}", image_name);
+
         let mut export_file = OpenOptions::new().write(true).create(true).open("saved_image").unwrap();
 
         let fut = self.connection.images().get(image_name).export().for_each(move |bytes| {
@@ -129,6 +130,7 @@ impl DockerHelper
         
         fs::remove_dir_all("unpack").unwrap();
         self.db.insert_image(image_name, 1);
+        println!("Finished reading image {}", image_name);
     }
 
     /// Will check if the process is a valid container process, this is done by checking the hash from the db of the image and comparing it to the hash we will calculate now from the exe link
@@ -141,14 +143,28 @@ impl DockerHelper
     {
         let digest = self.get_container_image(&container_id);
         let path = self.get_process_path_by_pid(pid);
+        self.read_docker_image_and_get_hashs(&digest); // Calling this to make sure we have the hashes. If not make it
         let correct_hash = self.db.get_hash(&path, &digest);
+
+        if correct_hash.is_empty()
+        {
+            println!("File is not in the image data!");
+            return false;
+        }
+
         let hash = match self.get_hash_of_file(&format!("/proc/{}/exe", pid))
         {
             Ok(hash) => hash,
             Err(_) => return false
         };
 
-        correct_hash == hash
+        if correct_hash != hash
+        {
+            println!("The file hash was not the same!");
+            return false;
+        }
+
+        true
     }
 
     /// Returns a vector of all the current processes ids.
@@ -280,13 +296,30 @@ impl DockerHelper
     /// * `path` - A string to the file
     fn is_elf(&self, path: &String) -> bool
     {
-        let mut file = match fs::File::open(path)
+        if path.contains("/dev/")
+        {
+            return false;
+        }
+
+        let real_path = match fs::read_link(path)
+        {
+            Ok(real_path) => real_path.to_str().unwrap().to_string(),
+            Err(_) => path.to_string()
+        };
+
+        if real_path.contains("/dev/")
+        {
+            return false;
+        }
+
+        let mut file = match fs::File::open(real_path)
         {
             Ok(file) => file,
             Err(_) => return false
         };
-        let mut bytes: [u8; 4] = [0; 4];
         
+        let mut bytes: [u8; 4] = [0; 4];
+
         match file.read_exact(&mut bytes)
         {
             Ok(_) => (()),

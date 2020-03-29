@@ -57,6 +57,11 @@ impl DBHelper
         self.connection.execute(format!("INSERT INTO files (path, digest, hash) VALUES('{}', '{}', '{}')", path, digest, hash)).unwrap();
     }
 
+    /// Returns the hash of the given file in the given image (by the digest)
+    /// 
+    /// # Arguments
+    /// * `path` - The path to the file inside the image
+    /// * `digest` - The image digest
     pub fn get_hash(&self, path: &String, digest: &String) -> String
     {
         let mut statement = self.connection.prepare(format!("SELECT hash FROM files WHERE path='{}' AND digest='{}'", path, digest)).unwrap().cursor();
