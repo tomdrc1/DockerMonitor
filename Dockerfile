@@ -1,4 +1,4 @@
 FROM rust
-COPY ./target/release/rezilion_project /rezilion_project
+COPY ./target/release/docker_monitor /docker_monitor
 WORKDIR /
-CMD ["./rezilion_project"]
+CMD ["./docker_monitor"]
